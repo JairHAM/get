@@ -87,8 +87,8 @@ model Order {
   tax           Float       @default(0)
   discount      Float       @default(0)
   total         Float
-  paymentMethod PaymentMethod
-  tableNumber   String?
+  paymentMethod PaymentMethod?
+  tableNumber   String
   customerName  String?
   notes         String?
   userId        String
@@ -104,6 +104,9 @@ model Order {
 
 enum OrderStatus {
   PENDING
+  PREPARING
+  READY
+  DELIVERED
   COMPLETED
   CANCELLED
 }
