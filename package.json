@@ -1,0 +1,26 @@
+{
+  "name": "wep-pos-backend",
+  "version": "1.0.0",
+  "description": "Backend API para Sistema POS Restaurante",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "build": "prisma generate",
+    "migrate": "prisma migrate deploy",
+    "studio": "prisma studio"
+  },
+  "keywords": ["pos", "restaurant", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "@prisma/client": "^5.7.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "prisma": "^5.7.1"
+  }
+}
