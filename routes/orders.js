@@ -110,7 +110,7 @@ router.post('/', authMiddleware, async (req, res) => {
         tax: taxAmount,
         discount: discountAmount,
         total,
-        paymentMethod: paymentMethod || 'EFECTIVO',
+        paymentMethod: paymentMethod || 'CASH',
         tableNumber: tableNumber.toString(),
         customerName,
         notes,
