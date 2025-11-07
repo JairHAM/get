@@ -89,7 +89,6 @@ router.post('/', authMiddleware, async (req, res) => {
         quantity: item.quantity,
         price: itemPrice,
         subtotal: itemSubtotal,
-        notes: item.notes || null
       });
     }
 
