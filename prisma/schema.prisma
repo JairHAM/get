@@ -34,6 +34,8 @@ enum UserRole {
   MANAGER
   CASHIER
   WAITER
+  COOK
+  BARTENDER
 }
 
 // Modelo de Categoría
