@@ -32,8 +32,7 @@ router.get('/', authMiddleware, async (req, res) => {
             product: {
               select: {
                 id: true,
-                name: true,
-                price: true
+                name: true
               }
             }
           }
@@ -59,10 +58,6 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'La orden debe tener al menos un producto' });
     }
 
-    if (!tableNumber) {
-      return res.status(400).json({ error: 'El número de mesa es requerido' });
-    }
-
     // Calcular subtotal
     let subtotal = 0;
     const orderItems = [];
@@ -80,16 +75,14 @@ router.post('/', authMiddleware, async (req, res) => {
         return res.status(400).json({ error: `Producto ${product.name} no está disponible` });
       }
 
-      const itemPrice = item.price || product.price;
-      const itemSubtotal = itemPrice * item.quantity;
+      const itemSubtotal = product.price * item.quantity;
       subtotal += itemSubtotal;
 
       orderItems.push({
         productId: item.productId,
         quantity: item.quantity,
-        price: itemPrice,
-        subtotal: itemSubtotal,
-        notes: item.notes || null
+        price: product.price,
+        subtotal: itemSubtotal
       });
     }
 
@@ -100,8 +93,8 @@ router.post('/', authMiddleware, async (req, res) => {
     // Generar número de orden
     const orderCount = await prisma.order.count();
     const orderNumber = `ORD-${String(orderCount + 1).padStart(6, '0')}`;
-    
-    // Crear orden con estado PENDING (para que aparezca en cocina)
+
+    // Crear orden con transacción
     const order = await prisma.order.create({
       data: {
         orderNumber,
@@ -110,11 +103,11 @@ router.post('/', authMiddleware, async (req, res) => {
         tax: taxAmount,
         discount: discountAmount,
         total,
-        paymentMethod: paymentMethod || 'EFECTIVO',
-        tableNumber: tableNumber.toString(),
+        paymentMethod,
+        tableNumber,
         customerName,
         notes,
-        status: 'PENDING', // ← CAMBIO: Inicia como PENDING en lugar de COMPLETED
+        status: 'COMPLETED',
         items: {
           create: orderItems
         }
@@ -134,13 +127,25 @@ router.post('/', authMiddleware, async (req, res) => {
       }
     });
 
+    // Actualizar stock de productos
+    for (const item of orderItems) {
+      await prisma.product.update({
+        where: { id: item.productId },
+        data: {
+          stock: {
+            decrement: item.quantity
+          }
+        }
+      });
+    }
+
     res.status(201).json({ 
       message: 'Orden creada exitosamente',
       order 
     });
   } catch (error) {
     console.error('Error al crear orden:', error);
-    res.status(500).json({ error: 'Error al crear orden', details: error.message });
+    res.status(500).json({ error: 'Error al crear orden' });
   }
 });
 
@@ -174,39 +179,6 @@ router.get('/:id', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('Error al obtener orden:', error);
     res.status(500).json({ error: 'Error al obtener orden' });
-  }
-});
-
-// Actualizar estado de orden (NUEVO ENDPOINT)
-router.patch('/:id', authMiddleware, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const validStatuses = ['PENDING', 'PREPARING', 'READY', 'DELIVERED', 'COMPLETED', 'CANCELLED'];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({ error: 'Estado inválido' });
-    }
-
-    const order = await prisma.order.update({
-      where: { id },
-      data: { status },
-      include: {
-        items: {
-          include: {
-            product: true
-          }
-        }
-      }
-    });
-
-    res.json({ 
-      message: 'Estado actualizado exitosamente',
-      order 
-    });
-  } catch (error) {
-    console.error('Error al actualizar orden:', error);
-    res.status(500).json({ error: 'Error al actualizar orden' });
   }
 });
 
